@@ -1,13 +1,12 @@
 name: Estuary Pull Specs
-description: Pull Estuary specs by prefix and output to a file
+description: Pull Estuary specs by either prefix or name
 inputs:
   prefix:
     description: Catalog prefix to pull (e.g., sean-estuary/)
-    required: true
-  output:
-    description: Output file path
     required: false
-    default: estuary_specs.json
+  name:
+    description: Full catalog name to pull (capture, collection, derivation, or materialization)
+    required: false
 runs:
   using: composite
   steps:
@@ -22,10 +21,22 @@ runs:
       shell: bash
       env:
         PREFIX: ${{ inputs.prefix }}
-        OUTPUT: ${{ inputs.output }}
+        NAME: ${{ inputs.name }}
       run: |
         set -euo pipefail
-        echo "Pulling specs for prefix ${PREFIX}"
-        flowctl catalog pull-specs --prefix "${PREFIX}" > "${OUTPUT}"
-        test -s "${OUTPUT}" || { echo "No specs returned" >&2; exit 1; }
+        if [[ -n "${PREFIX:-}" && -n "${NAME:-}" ]]; then
+          echo "Error: provide exactly one of 'prefix' or 'name'" >&2
+          exit 2
+        fi
+        if [[ -z "${PREFIX:-}" && -z "${NAME:-}" ]]; then
+          echo "Error: one of 'prefix' or 'name' is required" >&2
+          exit 2
+        fi
 
+        if [[ -n "${PREFIX:-}" ]]; then
+          echo "Pulling specs for prefix ${PREFIX}"
+          flowctl catalog pull-specs --prefix "${PREFIX}"
+        else
+          echo "Pulling specs for name ${NAME}"
+          flowctl catalog pull-specs --name "${NAME}"
+        fi

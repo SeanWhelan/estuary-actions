@@ -19,10 +19,8 @@ jobs:
         uses: ./.github/actions/pull-specs
         with:
           prefix: sean-estuary/
-          output: estuary_specs.json
-
-      - name: Upload specs artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: estuary-specs-sean-estuary
-          path: estuary_specs.json
+      # Example of pulling by a specific name instead of prefix:
+      # - name: Pull specs for name
+      #   uses: ./.github/actions/pull-specs
+      #   with:
+      #     name: acmeCo/marketing/emailList

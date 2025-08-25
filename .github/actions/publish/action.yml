@@ -1,0 +1,71 @@
+name: Estuary Publish
+description: Publish catalog specifications from a top-level flow.yaml
+inputs:
+  source:
+    description: Path to the top-level flow.yaml
+    required: false
+    default: flow.yaml
+  default-data-plane:
+    description: Optional default data plane to use for created specs
+    required: false
+  strip-expect-pub-id:
+    description: Remove lines with expectPubId: before publishing
+    required: false
+    default: "true"
+  run-test:
+    description: Run flowctl catalog test before publishing
+    required: false
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - name: Install flowctl
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo curl -fsSL -o /usr/local/bin/flowctl 'https://github.com/estuary/flow/releases/latest/download/flowctl-x86_64-linux'
+        sudo chmod +x /usr/local/bin/flowctl
+        flowctl -V
+
+    - name: Strip expectPubId (optional)
+      if: inputs.strip-expect-pub-id == 'true'
+      shell: bash
+      env:
+        SOURCE: ${{ inputs.source }}
+      run: |
+        set -euo pipefail
+        ROOT_DIR=$(dirname "$SOURCE")
+        echo "Scanning for expectPubId under: $ROOT_DIR"
+        if grep -R "^\s*expectPubId:" "$ROOT_DIR" >/dev/null 2>&1; then
+          grep -Rnl "^\s*expectPubId:" "$ROOT_DIR" | while read -r f; do
+            echo "Stripping expectPubId in: $f"
+            sed -i '/^\s*expectPubId:/d' "$f"
+          done
+        else
+          echo "No expectPubId lines found."
+        fi
+
+    - name: Test (optional)
+      if: inputs.run-test == 'true'
+      shell: bash
+      env:
+        SOURCE: ${{ inputs.source }}
+      run: |
+        set -euo pipefail
+        flowctl catalog test --source "$SOURCE"
+
+    - name: Publish
+      shell: bash
+      env:
+        SOURCE: ${{ inputs.source }}
+        DP: ${{ inputs.default-data-plane }}
+      run: |
+        set -euo pipefail
+        if [[ -n "${DP:-}" ]]; then
+          echo "Publishing from $SOURCE with data-plane: $DP"
+          flowctl catalog publish --source "$SOURCE" --default-data-plane "$DP" --auto-approve
+        else
+          echo "Publishing from $SOURCE"
+          flowctl catalog publish --source "$SOURCE" --auto-approve
+        fi
+

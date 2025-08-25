@@ -6,6 +6,7 @@ Reusable composite actions for Estuary Flow:
 - Pulls catalog specs by prefix or name
 - Toggles a task's `shards.disable` by catalog name (optionally publish)
 - Fetches live status for items and exposes outputs for alerting
+- Publishes specs from a top-level `flow.yaml` with safety checks
 
 ## Actions
 
@@ -144,6 +145,30 @@ jobs:
           tolerate-test-failure: ${{ github.event.inputs.tolerate_test_failure }}
           publish: ${{ github.event.inputs.publish }}
 ```
+
+### Publish
+
+Path: `.github/actions/publish`
+
+Inputs:
+
+- `source` (optional, default `flow.yaml`): Path to top-level `flow.yaml`.
+- `default-data-plane` (optional): Data plane for created specs.
+- `strip-expect-pub-id` (optional, default `true`): Remove `expectPubId:` before publishing.
+- `run-test` (optional, default `true`): Run `flowctl catalog test` prior to publish.
+
+Example:
+
+```yaml
+- uses: SeanWhelan/estuary-test/.github/actions/publish@v0.1.0
+  with:
+    source: path/to/flow.yaml
+    default-data-plane: ops/dp/public/gcp-us-central1-c2
+    strip-expect-pub-id: "true"
+    run-test: "true"
+```
+
+Workflow example: `.github/workflows/estuary-publish.yml` demonstrates dispatch inputs for these options.
 
 ### Status
 

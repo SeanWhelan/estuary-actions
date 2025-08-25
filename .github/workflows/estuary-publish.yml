@@ -1,0 +1,41 @@
+name: Publish Estuary Specs
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Path to top-level flow.yaml
+        required: true
+        default: flow.yaml
+      default_data_plane:
+        description: Optional default data plane
+        required: false
+        default: ""
+      strip_expect_pub_id:
+        description: Strip expectPubId before publishing
+        required: false
+        default: "true"
+      run_test:
+        description: Run flowctl test before publishing
+        required: false
+        default: "true"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Estuary
+        uses: ./.github/actions/auth
+        with:
+          token: ${{ secrets.ESTUARY_REFRESH_TOKEN }}
+
+      - name: Publish
+        uses: ./.github/actions/publish
+        with:
+          source: ${{ github.event.inputs.source }}
+          default-data-plane: ${{ github.event.inputs.default_data_plane }}
+          strip-expect-pub-id: ${{ github.event.inputs.strip_expect_pub_id }}
+          run-test: ${{ github.event.inputs.run_test }}

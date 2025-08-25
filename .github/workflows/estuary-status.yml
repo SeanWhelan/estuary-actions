@@ -1,0 +1,40 @@
+name: Estuary Status
+
+on:
+  workflow_dispatch:
+    inputs:
+      names:
+        description: Space-separated catalog names to query
+        required: true
+        default: "sean-estuary/pg-mongo/source-postgres"
+      output_format:
+        description: Output format for logs (json|yaml|table)
+        required: false
+        default: json
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Estuary
+        uses: ./.github/actions/auth
+        with:
+          token: ${{ secrets.ESTUARY_REFRESH_TOKEN }}
+
+      - name: Fetch status
+        id: est
+        uses: ./.github/actions/status
+        with:
+          names: ${{ github.event.inputs.names }}
+          output-format: ${{ github.event.inputs.output_format }}
+
+      - name: Example - send Slack alert when not OK
+        if: steps.est.outputs.summary_status && steps.est.outputs.summary_status != 'ok'
+        env:
+          SUMMARY: ${{ steps.est.outputs.summary_status }}
+          MESSAGE: ${{ steps.est.outputs.summary_message }}
+        run: |
+          echo "Would send Slack alert: $SUMMARY - $MESSAGE"

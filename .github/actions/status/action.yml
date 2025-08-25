@@ -1,0 +1,67 @@
+name: Estuary Status
+description: Fetch status for one or more Flow catalog items and expose structured outputs
+inputs:
+  names:
+    description: Space-separated list of catalog names
+    required: true
+  output-format:
+    description: Output format for logs (json|yaml|table)
+    required: false
+    default: json
+runs:
+  using: composite
+  steps:
+    - name: Install flowctl
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo curl -fsSL -o /usr/local/bin/flowctl 'https://github.com/estuary/flow/releases/latest/download/flowctl-x86_64-linux'
+        sudo chmod +x /usr/local/bin/flowctl
+        flowctl -V
+    - name: Fetch status
+      id: fetch
+      shell: bash
+      env:
+        NAMES: ${{ inputs.names }}
+        FORMAT: ${{ inputs.output-format }}
+      run: |
+        set -euo pipefail
+        # Capture JSON regardless of display format, so we can parse into outputs
+        JSON_OUT=$(flowctl catalog status -o json ${NAMES})
+        echo "Raw JSON status:" >&2
+        echo "$JSON_OUT" | jq -c . >&2 || true
+        # For logs, print in requested format
+        case "$FORMAT" in
+          json)
+            echo "$JSON_OUT" | jq -c .
+            ;;
+          yaml)
+            echo "$JSON_OUT" | yq -p=json -o=yaml
+            ;;
+          table)
+            flowctl catalog status -o table ${NAMES}
+            ;;
+          *)
+            echo "$JSON_OUT" | jq -c .
+            ;;
+        esac
+        # If a single name is provided, extract key fields as outputs
+        COUNT=$(echo "$JSON_OUT" | jq -r '. | if type=="array" then length else 1 end')
+        if [ "$COUNT" = "1" ]; then
+          ONE=$(echo "$JSON_OUT" | jq 'if type=="array" then .[0] else . end')
+          SUMMARY_STATUS=$(echo "$ONE" | jq -r '.summary.status // ""')
+          SUMMARY_MESSAGE=$(echo "$ONE" | jq -r '.summary.message // ""')
+          SPEC_TYPE=$(echo "$ONE" | jq -r '.spec_type // ""')
+          LAST_PUB_ID=$(echo "$ONE" | jq -r '.last_pub_id // ""')
+          LAST_BUILD_ID=$(echo "$ONE" | jq -r '.last_build_id // ""')
+          CONNECTOR_MSG=$(echo "$ONE" | jq -r '.connector_status.message // ""')
+          echo "summary_status=$SUMMARY_STATUS" >> "$GITHUB_OUTPUT"
+          echo "summary_message=$SUMMARY_MESSAGE" >> "$GITHUB_OUTPUT"
+          echo "spec_type=$SPEC_TYPE" >> "$GITHUB_OUTPUT"
+          echo "last_pub_id=$LAST_PUB_ID" >> "$GITHUB_OUTPUT"
+          echo "last_build_id=$LAST_BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "connector_message=$CONNECTOR_MSG" >> "$GITHUB_OUTPUT"
+        else
+          # Provide the whole array as an output for multi-target workflows
+          echo "json=$JSON_OUT" >> "$GITHUB_OUTPUT"
+        fi

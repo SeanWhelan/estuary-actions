@@ -5,6 +5,7 @@ Reusable composite actions for Estuary Flow:
 - Authenticates `flowctl` using a provided token
 - Pulls catalog specs by prefix or name
 - Toggles a task's `shards.disable` by catalog name (optionally publish)
+- Fetches live status for items and exposes outputs for alerting
 
 ## Actions
 
@@ -143,6 +144,39 @@ jobs:
           tolerate-test-failure: ${{ github.event.inputs.tolerate_test_failure }}
           publish: ${{ github.event.inputs.publish }}
 ```
+
+### Status
+
+Path: `.github/actions/status`
+
+Inputs:
+
+- `names` (required): Space-separated catalog names.
+- `output-format` (optional, default `json`): `json`, `yaml`, or `table` for logs.
+
+Outputs (when a single name is provided):
+
+- `summary_status`: High-level status, e.g. `ok`.
+- `summary_message`: Human-readable status message.
+- `spec_type`: `capture`, `collection`, etc.
+- `last_pub_id`, `last_build_id`
+- `connector_message`: Last connector message, if any.
+
+Example:
+
+```yaml
+- uses: SeanWhelan/estuary-test/.github/actions/status@v0.1.0
+  id: est
+  with:
+    names: sean-estuary/pg-mongo/source-postgres
+    output-format: json
+- name: Alert if not ok
+  if: steps.est.outputs.summary_status && steps.est.outputs.summary_status != 'ok'
+  run: |
+    echo "ALERT: ${ { steps.est.outputs.summary_status } } - ${ { steps.est.outputs.summary_message } }"
+```
+
+Workflow example: `.github/workflows/estuary-status.yml` demonstrates usage and a conditional alert step.
 
 ## Notes
 

@@ -1,0 +1,42 @@
+name: Toggle Estuary Task
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Full catalog name to toggle
+        required: true
+      action:
+        description: disable or enable
+        required: true
+        default: disable
+        type: choice
+        options: [disable, enable]
+      tolerate_test_failure:
+        description: Tolerate flowctl test failures
+        required: false
+        default: "true"
+      publish:
+        description: Publish the modified spec
+        required: false
+        default: "false"
+
+jobs:
+  toggle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Estuary
+        uses: ./.github/actions/auth
+        with:
+          token: ${{ secrets.ESTUARY_REFRESH_TOKEN }}
+
+      - name: Toggle shards.disable
+        uses: ./.github/actions/toggle-task
+        with:
+          name: ${{ github.event.inputs.name }}
+          action: ${{ github.event.inputs.action }}
+          tolerate-test-failure: ${{ github.event.inputs.tolerate_test_failure }}
+          publish: ${{ github.event.inputs.publish }}

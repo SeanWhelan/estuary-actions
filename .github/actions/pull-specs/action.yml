@@ -1,0 +1,31 @@
+name: Estuary Pull Specs
+description: Pull Estuary specs by prefix and output to a file
+inputs:
+  prefix:
+    description: Catalog prefix to pull (e.g., sean-estuary/)
+    required: true
+  output:
+    description: Output file path
+    required: false
+    default: estuary_specs.json
+runs:
+  using: composite
+  steps:
+    - name: Install flowctl
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo curl -fsSL -o /usr/local/bin/flowctl 'https://github.com/estuary/flow/releases/latest/download/flowctl-x86_64-linux'
+        sudo chmod +x /usr/local/bin/flowctl
+        flowctl -V
+    - name: Pull specs
+      shell: bash
+      env:
+        PREFIX: ${{ inputs.prefix }}
+        OUTPUT: ${{ inputs.output }}
+      run: |
+        set -euo pipefail
+        echo "Pulling specs for prefix ${PREFIX}"
+        flowctl catalog pull-specs --prefix "${PREFIX}" > "${OUTPUT}"
+        test -s "${OUTPUT}" || { echo "No specs returned" >&2; exit 1; }
+

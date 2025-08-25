@@ -1,0 +1,25 @@
+name: Estuary Auth
+description: Authenticate flowctl with Estuary using a provided token (refresh or access)
+inputs:
+  token:
+    description: Estuary token (prefer refresh token)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Install flowctl
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo curl -fsSL -o /usr/local/bin/flowctl 'https://github.com/estuary/flow/releases/latest/download/flowctl-x86_64-linux'
+        sudo chmod +x /usr/local/bin/flowctl
+        flowctl -V
+    - name: Configure token
+      shell: bash
+      env:
+        TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+        echo "Configuring Estuary token for flowctl"
+        echo "FLOW_AUTH_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+

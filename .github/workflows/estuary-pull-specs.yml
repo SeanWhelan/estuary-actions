@@ -1,0 +1,28 @@
+name: Pull Estuary Specs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pull-specs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Estuary
+        uses: ./.github/actions/auth
+        with:
+          token: ${{ secrets.ESTUARY_REFRESH_TOKEN }}
+
+      - name: Pull specs for prefix
+        uses: ./.github/actions/pull-specs
+        with:
+          prefix: sean-estuary/
+          output: estuary_specs.json
+
+      - name: Upload specs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: estuary-specs-sean-estuary
+          path: estuary_specs.json

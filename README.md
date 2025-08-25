@@ -21,7 +21,7 @@ Inputs:
 Example:
 
 ```yaml
-- uses: SeanWhelan/estuary-test/.github/actions/auth@v0.1.0
+- uses: SeanWhelan/estuary-actions/.github/actions/auth@v0.1.0
   with:
     token: ${{ secrets.ESTUARY_REFRESH_TOKEN }}
 ```
@@ -32,7 +32,7 @@ Path: `.github/actions/pull-specs`
 
 Inputs:
 
-- `prefix` (optional): Catalog prefix, e.g. `sean-estuary/` or `your-org/`.
+- `prefix` (optional): Catalog prefix, e.g. `acmeCo/` or `your-org/`.
 - `name` (optional): Full catalog name (capture, collection, derivation, or materialization).
 
 Exactly one of `prefix` or `name` must be provided.
@@ -40,15 +40,15 @@ Exactly one of `prefix` or `name` must be provided.
 Example:
 
 ```yaml
-- uses: SeanWhelan/estuary-test/.github/actions/pull-specs@v0.1.0
+- uses: SeanWhelan/estuary-actions/.github/actions/pull-specs@v0.1.0
   with:
-    prefix: sean-estuary/
+    prefix: acmeCo/
 ```
 
 Or by name:
 
 ```yaml
-- uses: SeanWhelan/estuary-test/.github/actions/pull-specs@v0.1.0
+- uses: SeanWhelan/estuary-actions/.github/actions/pull-specs@v0.1.0
   with:
     name: acmeCo/marketing/emailList
 ```
@@ -75,9 +75,9 @@ Behavior:
 Example (disable):
 
 ```yaml
-- uses: SeanWhelan/estuary-test/.github/actions/toggle-task@v0.1.0
+- uses: SeanWhelan/estuary-actions/.github/actions/toggle-task@v0.1.0
   with:
-    name: sean-estuary/pg-mongo/source-postgres
+    name: acmeCo/pg-mongo/source-postgres
     action: disable
     tolerate-test-failure: "true"
     publish: "false"
@@ -94,14 +94,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: SeanWhelan/estuary-test/.github/actions/auth@v0.1.0
+      - uses: SeanWhelan/estuary-actions/.github/actions/auth@v0.1.0
         with:
           token: ${{ secrets.ESTUARY_REFRESH_TOKEN }}
-      - uses: SeanWhelan/estuary-test/.github/actions/pull-specs@v0.1.0
+      - uses: SeanWhelan/estuary-actions/.github/actions/pull-specs@v0.1.0
         with:
-          prefix: sean-estuary/
+          prefix: acmeCo/
       # Or, pull a single spec by name instead of prefix:
-      # - uses: SeanWhelan/estuary-test/.github/actions/pull-specs@v0.1.0
+      # - uses: SeanWhelan/estuary-actions/.github/actions/pull-specs@v0.1.0
       #   with:
       #     name: acmeCo/marketing/emailList
 ```
@@ -135,10 +135,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: SeanWhelan/estuary-test/.github/actions/auth@v0.1.0
+      - uses: SeanWhelan/estuary-actions/.github/actions/auth@v0.1.0
         with:
           token: ${{ secrets.ESTUARY_REFRESH_TOKEN }}
-      - uses: SeanWhelan/estuary-test/.github/actions/toggle-task@v0.1.0
+      - uses: SeanWhelan/estuary-actions/.github/actions/toggle-task@v0.1.0
         with:
           name: ${{ github.event.inputs.name }}
           action: ${{ github.event.inputs.action }}
@@ -160,7 +160,7 @@ Inputs:
 Example:
 
 ```yaml
-- uses: SeanWhelan/estuary-test/.github/actions/publish@v0.1.0
+- uses: SeanWhelan/estuary-actions/.github/actions/publish@v0.1.0
   with:
     source: path/to/flow.yaml
     default-data-plane: ops/dp/public/gcp-us-central1-c2
@@ -190,10 +190,10 @@ Outputs (when a single name is provided):
 Example:
 
 ```yaml
-- uses: SeanWhelan/estuary-test/.github/actions/status@v0.1.0
+- uses: SeanWhelan/estuary-actions/.github/actions/status@v0.1.0
   id: est
   with:
-    names: sean-estuary/pg-mongo/source-postgres
+    names: acmeCo/pg-mongo/source-postgres
     output-format: json
 - name: Alert if not ok
   if: steps.est.outputs.summary_status && steps.est.outputs.summary_status != 'ok'

@@ -4,6 +4,7 @@ Reusable composite actions for Estuary Flow:
 
 - Authenticates `flowctl` using a provided token
 - Pulls catalog specs by prefix or name
+- Toggles a task's `shards.disable` by catalog name (optionally publish)
 
 ## Actions
 
@@ -50,6 +51,36 @@ Or by name:
     name: acmeCo/marketing/emailList
 ```
 
+### Toggle Task
+
+Path: `.github/actions/toggle-task`
+
+Inputs:
+
+- `name` (required): Full catalog name (capture, collection, derivation, or materialization).
+- `action` (required): `disable` or `enable`.
+- `tolerate-test-failure` (optional, default `true`): If `flowctl test` fails (e.g., connector offline), continue.
+- `publish` (optional, default `false`): If `true`, publish the changes using the top-level `flow.yaml`.
+
+Behavior:
+
+- Pulls specs for the provided `name` and resolves imports into a temp working directory.
+- Locates the full spec mapping and updates or adds `shards.disable`.
+- Preserves any existing `shards` settings and moves the `shards` block to the end of the mapping.
+- Strips `expectPubId` under the target mapping to allow publishing.
+- Runs `flowctl catalog test`; optionally publishes from the top-level `flow.yaml`.
+
+Example (disable):
+
+```yaml
+- uses: SeanWhelan/estuary-test/.github/actions/toggle-task@v0.1.0
+  with:
+    name: sean-estuary/pg-mongo/source-postgres
+    action: disable
+    tolerate-test-failure: "true"
+    publish: "false"
+```
+
 ## Full workflow example
 
 ```yaml
@@ -71,6 +102,46 @@ jobs:
       # - uses: SeanWhelan/estuary-test/.github/actions/pull-specs@v0.1.0
       #   with:
       #     name: acmeCo/marketing/emailList
+```
+
+## Full workflow example (Toggle Task)
+
+```yaml
+name: Toggle Estuary Task
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Full catalog name to toggle
+        required: true
+      action:
+        description: disable or enable
+        required: true
+        default: disable
+        type: choice
+        options: [disable, enable]
+      tolerate_test_failure:
+        description: Tolerate flowctl test failures
+        required: false
+        default: "true"
+      publish:
+        description: Publish the modified spec
+        required: false
+        default: "false"
+jobs:
+  toggle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: SeanWhelan/estuary-test/.github/actions/auth@v0.1.0
+        with:
+          token: ${{ secrets.ESTUARY_REFRESH_TOKEN }}
+      - uses: SeanWhelan/estuary-test/.github/actions/toggle-task@v0.1.0
+        with:
+          name: ${{ github.event.inputs.name }}
+          action: ${{ github.event.inputs.action }}
+          tolerate-test-failure: ${{ github.event.inputs.tolerate_test_failure }}
+          publish: ${{ github.event.inputs.publish }}
 ```
 
 ## Notes
